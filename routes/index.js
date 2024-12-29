@@ -8,7 +8,7 @@ const loveWordRoutes = require('./loveWord');
 const categoryRoutes = require('./category');
 const postRoutes = require('./post');
 const authRoutes = require('./auth');
-const authMiddleware = require('../middleware/auth');
+const userRoutes = require('./user');
 
 // 注册子路由
 router.use('/home', homeRoutes);
@@ -19,11 +19,12 @@ router.use('/love-words', loveWordRoutes);
 router.use('/categories', categoryRoutes);
 router.use('/posts', postRoutes);
 router.use('/auth', authRoutes);
+router.use('/user', userRoutes);
 
 // 需要登录的接口
-router.use('/user', authMiddleware);
-router.use('/posts/:id/like', authMiddleware);
-router.use('/posts/:id/collect', authMiddleware);
+router.use('/user', userRoutes);
+router.use('/posts/:id/like', userRoutes);
+router.use('/posts/:id/collect', userRoutes);
 
 // 404 处理
 router.use('*', (req, res) => {
@@ -33,4 +34,4 @@ router.use('*', (req, res) => {
   });
 });
 
-module.exports = router; 
+module.exports = router;
