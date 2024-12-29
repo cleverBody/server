@@ -1,0 +1,166 @@
+const db = require('../models/db');
+const { success, error } = require('../utils/response');
+
+class HomeController {
+  // 获取每日推荐
+  async getDailyRecommend(req, res) {
+    try {
+      const pool = db.getPool();
+      const [rows] = await pool.execute(`
+        SELECT 
+          l.id,
+          l.content,
+          l.author,
+          l.category,
+          l.likes,
+          CASE WHEN ul.id IS NOT NULL THEN 1 ELSE 0 END as isLiked
+        FROM love_words l
+        LEFT JOIN user_likes ul ON l.id = ul.love_word_id 
+          AND ul.user_id = ?
+        ORDER BY RAND()
+        LIMIT 1
+      `, [req.user?.id || '']);
+      
+      success(res, rows[0]);
+    } catch (err) {
+      console.error('获取每日推荐失败:', err);
+      error(res, '获取推荐失败');
+    }
+  }
+
+  // 获取分类列表
+  async getCategories(req, res) {
+    try {
+      const pool = db.getPool();
+      const [rows] = await pool.execute(`
+        SELECT 
+          c.id,
+          c.name,
+          c.description,
+          c.image,
+          COUNT(l.id) as count
+        FROM categories c
+        LEFT JOIN love_words l ON c.id = l.category_id
+        GROUP BY c.id
+        ORDER BY count DESC
+      `);
+      
+      // 添加默认图片
+      const categories = rows.map(category => ({
+        ...category,
+        image: category.image || '/assets/images/category-default.jpg'
+      }));
+
+      success(res, categories);
+    } catch (err) {
+      console.error('获取分类失败:', err);
+      error(res, '获取分类失败');
+    }
+  }
+
+  // 获取推荐列表
+  async getRecommendations(req, res) {
+    try {
+      const pool = db.getPool();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const offset = (page - 1) * limit;
+
+      const [rows] = await pool.query(
+        `SELECT 
+          l.id,
+          l.content,
+          l.author,
+          c.name as category,
+          l.likes,
+          l.created_at,
+          u.avatar,
+          u.nickname as author_name,
+          CASE WHEN ul.id IS NOT NULL THEN 1 ELSE 0 END as isLiked,
+          (SELECT COUNT(*) FROM comments WHERE love_word_id = l.id) as comments
+        FROM love_words l
+        LEFT JOIN categories c ON l.category_id = c.id
+        LEFT JOIN users u ON l.user_id = u.id
+        LEFT JOIN user_likes ul ON l.id = ul.love_word_id AND ul.user_id = ?
+        WHERE l.status = 1
+        ORDER BY l.likes DESC, l.created_at DESC
+        LIMIT ?, ?`,
+        [req.user?.id || '', offset, limit]
+      );
+
+      const [totalResult] = await pool.query(
+        'SELECT COUNT(*) as total FROM love_words WHERE status = 1'
+      );
+      const total = totalResult[0].total;
+      
+      // 处理数据
+      const list = rows.map(item => ({
+        ...item,
+        avatar: item.avatar || '/assets/images/default-avatar.png',
+        author_name: item.author_name || '佚名',
+        created_at: new Date(item.created_at).toISOString()
+      }));
+
+      success(res, {
+        list,
+        total,
+        hasMore: offset + rows.length < total
+      });
+    } catch (err) {
+      console.error('获取推荐列表失败:', err);
+      error(res, '获取推荐列表失败');
+    }
+  }
+
+  // AI生成情话
+  async generateLoveWords(req, res) {
+    try {
+      const { prompt } = req.body;
+      // 这里可以接入实际的 AI 服务
+      const content = await aiService.generate(prompt);
+      
+      success(res, { content });
+    } catch (err) {
+      console.error('AI生成失败:', err);
+      error(res, 'AI生成失败');
+    }
+  }
+
+  // 处理收藏
+  async handleCollect(req, res) {
+    try {
+      const { id, type } = req.body;
+      const userId = req.user.id;
+
+      await db.execute(
+        'INSERT INTO user_collections (user_id, love_word_id, type) VALUES (?, ?, ?)',
+        [userId, id, type]
+      );
+
+      success(res);
+    } catch (err) {
+      console.error('收藏失败:', err);
+      error(res, '收藏失败');
+    }
+  }
+
+  // 处理点赞
+  async handleLike(req, res) {
+    try {
+      const { id, type } = req.body;
+      const userId = req.user.id;
+
+      await db.execute(
+        'INSERT INTO user_likes (user_id, love_word_id, type) VALUES (?, ?, ?)',
+        [userId, id, type]
+      );
+
+      success(res);
+    } catch (err) {
+      console.error('点赞失败:', err);
+      error(res, '点赞失败');
+    }
+  }
+}
+
+module.exports = new HomeController(); 

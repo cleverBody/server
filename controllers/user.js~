@@ -1,0 +1,145 @@
+const User = require('../models/user');
+const { success, error } = require('../utils/response');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+
+class UserController {
+  // 微信登录
+  async login(req, res) {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return error(res, '缺少code参数', 400);
+      }
+
+      // 获取微信openid
+      const wxRes = await this.getWxOpenid(code);
+      if (!wxRes.openid) {
+        return error(res, '获取openid失败', 500);
+      }
+
+      // 查找或创建用户
+      let user = await User.findByOpenid(wxRes.openid);
+      if (!user) {
+        const userId = await User.create({
+          openid: wxRes.openid,
+          nickname: '微信用户',
+          avatar: '/images/default-avatar.png'
+        });
+        user = await User.findById(userId);
+      }
+
+      // 更新登录时间
+      await User.updateLastLogin(user.id);
+
+      // 生成token
+      const token = jwt.sign(
+        { id: user.id, openid: user.openid },
+        config.jwt.secret,
+        { expiresIn: config.jwt.expiresIn }
+      );
+
+      success(res, {
+        token,
+        userInfo: {
+          id: user.id,
+          nickname: user.nickname,
+          avatar: user.avatar,
+          theme: user.theme
+        }
+      });
+    } catch (err) {
+      error(res, err.message);
+    }
+  }
+
+  // 获取用户收藏列表
+  async getCollections(req, res) {
+    try {
+      const { user_id } = req.query;
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const [rows] = await User.execute(
+        `SELECT lw.*, uc.created_at as collect_time
+         FROM user_collections uc
+         LEFT JOIN love_words lw ON uc.love_word_id = lw.id
+         WHERE uc.user_id = ?
+         ORDER BY uc.created_at DESC
+         LIMIT ? OFFSET ?`,
+        [user_id, Number(limit), offset]
+      );
+
+      success(res, rows);
+    } catch (err) {
+      error(res, err.message);
+    }
+  }
+
+  // 获取用户点赞列表
+  async getLikes(req, res) {
+    try {
+      const { user_id } = req.query;
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
+
+      const [rows] = await User.execute(
+        `SELECT lw.*, ul.created_at as like_time
+         FROM user_likes ul
+         LEFT JOIN love_words lw ON ul.love_word_id = lw.id
+         WHERE ul.user_id = ?
+         ORDER BY ul.created_at DESC
+         LIMIT ? OFFSET ?`,
+        [user_id, Number(limit), offset]
+      );
+
+      success(res, rows);
+    } catch (err) {
+      error(res, err.message);
+    }
+  }
+
+  // 更新用户信息
+  async updateProfile(req, res) {
+    try {
+      const { id } = req.user;
+      const { nickname, avatar } = req.body;
+
+      await User.execute(
+        'UPDATE users SET nickname = ?, avatar = ? WHERE id = ?',
+        [nickname, avatar, id]
+      );
+
+      success(res, null, '更新成功');
+    } catch (err) {
+      error(res, err.message);
+    }
+  }
+
+  // 更新用户设置
+  async updateSettings(req, res) {
+    try {
+      const { id } = req.user;
+      const { dailyPush, theme } = req.body;
+
+      await User.updateSettings(id, { dailyPush, theme });
+      success(res, null, '设置更新成功');
+    } catch (err) {
+      error(res, err.message);
+    }
+  }
+
+  // 获取微信openid的辅助方法
+  async getWxOpenid(code) {
+    try {
+      const { appId, appSecret } = config.wxapp;
+      const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${appSecret}&js_code=${code}&grant_type=authorization_code`;
+      const response = await fetch(url);
+      return await response.json();
+    } catch (err) {
+      throw new Error('获取openid失败');
+    }
+  }
+}
+
+module.exports = new UserController(); 

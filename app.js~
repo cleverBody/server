@@ -1,0 +1,33 @@
+const express = require('express');
+
+// 处理跨域资源共享
+const cors = require('cors');
+const morgan = require('morgan');
+const routes = require('./routes');
+const errorHandler = require('./middleware/errorHandler');
+const config = require('./config');
+
+const app = express();
+
+// 中间件配置
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// 路由配置
+app.use('/api', routes);
+
+// 错误处理
+app.use(errorHandler);
+
+// 启动服务器
+const PORT = config.port || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+module.exports = app;
+
+
+
