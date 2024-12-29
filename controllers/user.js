@@ -187,3 +187,46 @@ exports.getGeneratorHistory = async (req, res) => {
     error(res, '获取历史记录失败');
   }
 };
+
+// 更新用户信息
+exports.updateUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { nickname, avatar } = req.body;
+
+    let updateFields = [];
+    let params = [];
+
+    if (nickname) {
+      updateFields.push('nickname = ?');
+      params.push(nickname);
+    }
+
+    if (avatar) {
+      updateFields.push('avatar = ?');
+      params.push(avatar);
+    }
+
+    if (updateFields.length === 0) {
+      return error(res, '没有要更新的字段');
+    }
+
+    params.push(userId);
+
+    await db.execute(
+      `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    // 获取更新后的用户信息
+    const [users] = await db.query(
+      'SELECT id, nickname, avatar, created_at FROM users WHERE id = ?',
+      [userId]
+    );
+
+    success(res, users[0]);
+  } catch (err) {
+    console.error('更新用户信息失败:', err);
+    error(res, '更新失败');
+  }
+};

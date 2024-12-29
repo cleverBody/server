@@ -9,6 +9,14 @@ class User {
     return rows[0];
   }
 
+  static async findById(id) {
+    const [rows] = await db.execute(
+      'SELECT * FROM users WHERE id = ?',
+      [id]
+    );
+    return rows[0];
+  }
+
   static async create(userData) {
     const { openid, nickname, avatar } = userData;
     const [result] = await db.execute(
@@ -18,18 +26,11 @@ class User {
     return result.insertId;
   }
 
-  static async updateLastLogin(id) {
+  static async update(id, userData) {
+    const { nickname, avatar } = userData;
     await db.execute(
-      'UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [id]
-    );
-  }
-
-  static async updateSettings(id, settings) {
-    const { dailyPush, theme } = settings;
-    await db.execute(
-      'UPDATE users SET daily_push = ?, theme = ? WHERE id = ?',
-      [dailyPush, theme, id]
+      'UPDATE users SET nickname = ?, avatar = ? WHERE id = ?',
+      [nickname, avatar, id]
     );
   }
 }
