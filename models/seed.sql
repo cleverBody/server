@@ -115,3 +115,45 @@ SET count = (
   FROM love_words 
   WHERE category = c.name
 ); 
+
+-- 插入测试用户
+INSERT INTO users (nickname, avatar) VALUES
+('测试用户1', '/images/avatar1.png'),
+('测试用户2', '/images/avatar2.png'),
+('测试用户3', '/images/avatar3.png');
+
+-- 插入测试情话
+INSERT INTO love_words (content, author, category, created_by) VALUES
+('你是我温暖的手套，冰冷的啤酒，带着阳光味道的衬衫，和一切美好的记忆。', '情话小王子', 'sweet', 1),
+('遇见你是我所有美好故事的开始。', '浪漫诗人', 'romantic', 2),
+('你知道我最喜欢什么星座吗？是你的微笑，因为它最闪耀。', '甜蜜达人', 'sweet', 3);
+
+-- 插入测试帖子
+INSERT INTO posts (user_id, content) VALUES
+(1, '分享一个小技巧：情话要走心不要太肉麻，要真诚不要太做作。'),
+(2, '推荐一句我最近很喜欢的情话：你闻起来香香的，像阳光晒过的棉花糖。'),
+(3, '今天天气真好，想对喜欢的人说：你是我平淡生活里的一抹惊喜。');
+
+-- 插入测试收藏
+INSERT INTO user_collections (user_id, type, target_id) VALUES
+(1, 'love', 1),
+(1, 'post', 2),
+(2, 'love', 2),
+(2, 'post', 1),
+(3, 'love', 3);
+
+-- 插入测试点赞
+INSERT INTO user_likes (user_id, type, target_id) VALUES
+(1, 'love', 2),
+(1, 'post', 3),
+(2, 'love', 1),
+(2, 'post', 2),
+(3, 'love', 1);
+
+-- 插入测试浏览历史
+INSERT INTO browse_history (user_id, type, target_id) VALUES
+(1, 'love', 1),
+(1, 'post', 2),
+(2, 'love', 3),
+(2, 'post', 1),
+(3, 'love', 2); 

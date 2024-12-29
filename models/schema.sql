@@ -65,24 +65,20 @@ CREATE TABLE comments (
 CREATE TABLE user_likes (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
-  love_word_id INT NOT NULL,
-  type VARCHAR(16) DEFAULT 'love_word',
+  type ENUM('love', 'post') NOT NULL,
+  target_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_like (user_id, love_word_id, type),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (love_word_id) REFERENCES love_words(id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 用户收藏表
 CREATE TABLE user_collections (
   id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,
-  love_word_id INT NOT NULL,
-  type VARCHAR(16) DEFAULT 'love_word',
+  type ENUM('love', 'post') NOT NULL,
+  target_id INT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_collection (user_id, love_word_id, type),
-  FOREIGN KEY (user_id) REFERENCES users(id),
-  FOREIGN KEY (love_word_id) REFERENCES love_words(id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 插入一些测试数据
@@ -249,3 +245,30 @@ CREATE TABLE IF NOT EXISTS generator_history (
 -- 创建索引以提高查询性能
 CREATE INDEX idx_category ON love_words(category);
 CREATE INDEX idx_push_date ON daily_pushes(push_date); 
+
+-- 添加标签表
+CREATE TABLE tags (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  name VARCHAR(32) NOT NULL,
+  count INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 添加情话-标签关联表
+CREATE TABLE love_word_tags (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  love_word_id INT NOT NULL,
+  tag_id INT NOT NULL,
+  FOREIGN KEY (love_word_id) REFERENCES love_words(id),
+  FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+
+-- 浏览历史表
+CREATE TABLE browse_history (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  type ENUM('love', 'post') NOT NULL,
+  target_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);

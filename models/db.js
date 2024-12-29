@@ -8,27 +8,35 @@ class Database {
 
   async connect() {
     try {
-      this.pool = mysql.createPool({
+      this.pool = await mysql.createPool({
         host: config.db.host,
         user: config.db.user,
         password: config.db.password,
         database: config.db.database,
-        port: config.db.port,
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0
       });
 
-      // 测试连接
-      const connection = await this.pool.getConnection();
-      console.log('✅ Database connected successfully');
-      connection.release();
-
-      return this.pool;
-    } catch (error) {
-      console.error('❌ Database connection failed:', error);
-      process.exit(1);
+      console.log('Database connected successfully');
+    } catch (err) {
+      console.error('Database connection failed:', err);
+      throw err;
     }
+  }
+
+  async query(sql, params = []) {
+    if (!this.pool) {
+      throw new Error('Database not connected. Call connect() first.');
+    }
+    return this.pool.query(sql, params);
+  }
+
+  async execute(sql, params = []) {
+    if (!this.pool) {
+      throw new Error('Database not connected. Call connect() first.');
+    }
+    return this.pool.execute(sql, params);
   }
 
   getPool() {

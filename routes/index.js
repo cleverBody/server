@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const homeRoutes = require('./home');
+const rankRoutes = require('./rank');
+const historyRoutes = require('./history');
+const collectionRoutes = require('./collection');
 
-// API 路由 - 直接使用 /home 而不是 /api/home，因为 app.js 已经添加了 /api 前缀
+// 注册子路由
 router.use('/home', homeRoutes);
+router.use('/rank', rankRoutes);
+router.use('/history', historyRoutes);
+router.use('/collections', collectionRoutes);
 
 // 404 处理
 router.use('*', (req, res) => {

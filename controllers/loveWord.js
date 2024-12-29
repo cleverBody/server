@@ -14,8 +14,10 @@ exports.getLoveWords = async (req, res) => {
         IF(uc.id IS NOT NULL, 1, 0) as is_collected,
         IF(ul.id IS NOT NULL, 1, 0) as is_liked
       FROM love_words l
-      LEFT JOIN user_collections uc ON l.id = uc.love_word_id AND uc.user_id = ?
-      LEFT JOIN user_likes ul ON l.id = ul.love_word_id AND ul.user_id = ?
+      LEFT JOIN user_collections uc ON l.id = uc.target_id 
+        AND uc.type = 'love' AND uc.user_id = ?
+      LEFT JOIN user_likes ul ON l.id = ul.target_id 
+        AND ul.type = 'love' AND ul.user_id = ?
     `;
 
     const params = [userId, userId];
@@ -29,8 +31,8 @@ exports.getLoveWords = async (req, res) => {
     sql += ' LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const loveWords = await db.query(sql, params);
-    success(res, loveWords);
+    const [rows] = await db.execute(sql, params);
+    success(res, rows);
   } catch (err) {
     console.error('获取情话列表失败:', err);
     error(res, '获取情话列表失败');
@@ -41,7 +43,7 @@ exports.getLoveWords = async (req, res) => {
 exports.getDailyPush = async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    
+
     // 检查今日是否已有推送
     let [dailyPush] = await db.query(`
       SELECT 
@@ -212,7 +214,7 @@ exports.getCategories = async (req, res) => {
       GROUP BY category
       ORDER BY count DESC
     `;
-    
+
     const categories = await db.query(sql);
 
     // 设置响应头，禁用缓存
@@ -225,4 +227,4 @@ exports.getCategories = async (req, res) => {
     console.error('获取分类失败:', err);
     error(res, '获取分类失败');
   }
-}; 
+};

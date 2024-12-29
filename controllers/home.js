@@ -15,7 +15,7 @@ class HomeController {
           l.likes,
           CASE WHEN ul.id IS NOT NULL THEN 1 ELSE 0 END as isLiked
         FROM love_words l
-        LEFT JOIN user_likes ul ON l.id = ul.love_word_id 
+        LEFT JOIN user_likes ul ON l.id = ul.target_id 
           AND ul.user_id = ?
         ORDER BY RAND()
         LIMIT 1
@@ -77,11 +77,11 @@ class HomeController {
           u.avatar,
           u.nickname as author_name,
           CASE WHEN ul.id IS NOT NULL THEN 1 ELSE 0 END as isLiked,
-          (SELECT COUNT(*) FROM comments WHERE love_word_id = l.id) as comments
+          (SELECT COUNT(*) FROM comments WHERE target_id = l.id) as comments
         FROM love_words l
         LEFT JOIN categories c ON l.category_id = c.id
         LEFT JOIN users u ON l.user_id = u.id
-        LEFT JOIN user_likes ul ON l.id = ul.love_word_id AND ul.user_id = ?
+        LEFT JOIN user_likes ul ON l.id = ul.target_id AND ul.user_id = ?
         WHERE l.status = 1
         ORDER BY l.likes DESC, l.created_at DESC
         LIMIT ?, ?`,
@@ -133,8 +133,8 @@ class HomeController {
       const userId = req.user.id;
 
       await db.execute(
-        'INSERT INTO user_collections (user_id, love_word_id, type) VALUES (?, ?, ?)',
-        [userId, id, type]
+        'INSERT INTO user_collections (user_id, type, target_id) VALUES (?, ?, ?)',
+        [userId, type, id]
       );
 
       success(res);
@@ -151,8 +151,8 @@ class HomeController {
       const userId = req.user.id;
 
       await db.execute(
-        'INSERT INTO user_likes (user_id, love_word_id, type) VALUES (?, ?, ?)',
-        [userId, id, type]
+        'INSERT INTO user_likes (user_id, type, target_id) VALUES (?, ?, ?)',
+        [userId, type, id]
       );
 
       success(res);
