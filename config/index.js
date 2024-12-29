@@ -1,16 +1,24 @@
 require('dotenv').config();
 
 module.exports = {
-  port: process.env.PORT || 300,
-  db: {
+  // JWT配置
+  jwtSecret: process.env.JWT_SECRET || 'default-secret-key',
+  jwtExpires: process.env.JWT_EXPIRES || '7d',
+
+  // 数据库配置
+  mysql: {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
-    database: process.env.DB_NAME || 'tuweiqinghua',
-    port: process.env.DB_PORT || 3306
+    database: process.env.DB_NAME || 'tuweiqinghua'
   },
-  jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key',
-    expiresIn: '7d'
-  }
+
+  // 微信小程序配置
+  wx: {
+    appId: process.env.WX_APPID,
+    appSecret: process.env.WX_SECRET
+  },
+
+  // 环境配置
+  isDev: process.env.NODE_ENV === 'development'
 };

@@ -9,6 +9,6 @@ app.listen(PORT, () => {
     🚀 Server is running!
     🔉 Listening on port ${PORT}
     📭 API endpoint: http://localhost:${PORT}/api
-    🔧 Environment: ${process.env.NODE_ENV || 'development'}
+    🔧 Environment: ${process.env.NODE_ENV || 'prod'}
   `);
-}); 
+});

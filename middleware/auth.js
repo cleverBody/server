@@ -3,16 +3,17 @@ const config = require('../config');
 const { error } = require('../utils/response');
 
 module.exports = (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-      return error(res, '未登录', 401);
-    }
+  const token = req.headers.authorization?.split(' ')[1];
 
-    const decoded = jwt.verify(token, config.jwt.secret);
+  if (!token) {
+    return error(res, '未登录', 401);
+  }
+
+  try {
+    const decoded = jwt.verify(token, config.jwtSecret);
     req.user = decoded;
     next();
   } catch (err) {
-    error(res, '无效的token', 401);
+    return error(res, '登录已过期', 401);
   }
 }; 
