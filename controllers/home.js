@@ -31,6 +31,11 @@ class HomeController {
   // 获取分类列表
   async getCategories(req, res) {
     try {
+      // 禁用缓存
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       const pool = db.getPool();
       const [rows] = await pool.execute(`
         SELECT 

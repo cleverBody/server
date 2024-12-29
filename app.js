@@ -7,6 +7,14 @@ const db = require('./models/db');
 
 const app = express();
 
+// 禁用缓存中间件
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // 中间件
 app.use(cors());
 app.use(morgan('dev'));
