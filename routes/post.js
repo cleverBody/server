@@ -4,18 +4,24 @@ const postController = require('../controllers/post');
 const auth = require('../middleware/auth');
 
 // 获取帖子列表
-router.get('/posts', postController.getPosts);
+router.get('/', postController.getPosts);
 
-// 创建帖子
-router.post('/posts', auth, postController.createPost);
+// 获取帖子详情
+router.get('/:id', postController.getPostById);
 
-// 点赞/取消点赞
-router.post('/posts/:id/like', auth, postController.toggleLike);
+// 发布帖子
+router.post('/', auth, postController.createPost);
+
+// 点赞帖子
+router.post('/:id/like', auth, postController.handleLike);
+
+// 收藏帖子
+router.post('/:id/collect', auth, postController.handleCollect);
 
 // 评论帖子
-router.post('/posts/:id/comments', auth, postController.comment);
+router.post('/:id/comment', auth, postController.createComment);
 
-// 获取评论列表
-router.get('/posts/:id/comments', postController.getComments);
+// 删除帖子
+router.delete('/:id', auth, postController.deletePost);
 
 module.exports = router; 
