@@ -6,7 +6,7 @@ module.exports = {
   jwtExpires: process.env.JWT_EXPIRES || '7d',
 
   // 数据库配置
-  mysql: {
+  db: {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || 'root',
