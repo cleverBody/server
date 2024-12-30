@@ -1,0 +1,103 @@
+const db = require('../models/db');
+const { success, error } = require('../utils/response');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+const axios = require('axios');
+
+class AuthController {
+  // 微信登录
+  async login(req, res) {
+    try {
+      const { code, userInfo } = req.body;
+
+      // 这里应该调用微信接口获取 openid
+      // 为了开发测试，先使用模拟的 openid
+      let openid;
+      if (process.env.NODE_ENV === 'development') {
+        openid = `test_${Date.now()}`;
+      } else {
+        // 正式环境调用微信接口
+        const wxRes = await axios.get('https://api.weixin.qq.com/sns/jscode2session', {
+          params: {
+            appid: config.wx.appId,
+            secret: config.wx.appSecret,
+            js_code: code,
+            grant_type: 'authorization_code'
+          }
+        });
+        
+        console.log('wxRes:', wxRes.data);
+
+        if (!wxRes.data.openid) {
+          return error(res, '微信登录失败');
+        }
+        openid = wxRes.data.openid;
+        console.log('openid:{}', openid);
+      }
+
+      // 查找或创建用户
+      const [users] = await db.query(
+        'SELECT * FROM users WHERE openid = ?',
+        [openid]
+      );
+
+      let userId;
+      if (users.length === 0) {
+        // 创建新用户
+        const [result] = await db.execute(
+          'INSERT INTO users (nickname, avatar, openid) VALUES (?, ?, ?)',
+          [userInfo.nickName, userInfo.avatarUrl, openid]
+        );
+        userId = result.insertId;
+      } else {
+        userId = users[0].id;
+        // 更新用户信息
+        await db.execute(
+          'UPDATE users SET nickname = ?, avatar = ? WHERE id = ?',
+          [userInfo.nickName, userInfo.avatarUrl, userId]
+        );
+      }
+
+      // 生成 token
+      const token = jwt.sign({ id: userId }, config.jwtSecret, {
+        expiresIn: config.jwtExpires
+      });
+
+      // 获取最新的用户信息
+      const [updatedUsers] = await db.query(
+        'SELECT id, nickname, avatar, created_at FROM users WHERE id = ?',
+        [userId]
+      );
+
+      success(res, {
+        token,
+        userInfo: updatedUsers[0]
+      });
+    } catch (err) {
+      console.error('登录失败:', err);
+      error(res, '登录失败');
+    }
+  }
+
+  // 获取用户信息
+  async getUserInfo(req, res) {
+    try {
+      const userId = req.user.id;
+      const [users] = await db.query(
+        'SELECT id, nickname, avatar, created_at FROM users WHERE id = ?',
+        [userId]
+      );
+
+      if (users.length === 0) {
+        return error(res, '用户不存在');
+      }
+
+      success(res, users[0]);
+    } catch (err) {
+      console.error('获取用户信息失败:', err);
+      error(res, '获取用户信息失败');
+    }
+  }
+}
+
+module.exports = new AuthController();

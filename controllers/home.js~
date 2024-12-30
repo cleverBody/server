@@ -11,16 +11,16 @@ class HomeController {
           l.id,
           l.content,
           l.author,
-          l.category,
+          l.category_id,
           l.likes,
           CASE WHEN ul.id IS NOT NULL THEN 1 ELSE 0 END as isLiked
         FROM love_words l
-        LEFT JOIN user_likes ul ON l.id = ul.love_word_id 
+        LEFT JOIN user_likes ul ON l.id = ul.target_id 
           AND ul.user_id = ?
         ORDER BY RAND()
         LIMIT 1
       `, [req.user?.id || '']);
-      
+
       success(res, rows[0]);
     } catch (err) {
       console.error('获取每日推荐失败:', err);
@@ -44,7 +44,7 @@ class HomeController {
         GROUP BY c.id
         ORDER BY count DESC
       `);
-      
+
       // 添加默认图片
       const categories = rows.map(category => ({
         ...category,
@@ -92,7 +92,7 @@ class HomeController {
         'SELECT COUNT(*) as total FROM love_words WHERE status = 1'
       );
       const total = totalResult[0].total;
-      
+
       // 处理数据
       const list = rows.map(item => ({
         ...item,
@@ -118,7 +118,7 @@ class HomeController {
       const { prompt } = req.body;
       // 这里可以接入实际的 AI 服务
       const content = await aiService.generate(prompt);
-      
+
       success(res, { content });
     } catch (err) {
       console.error('AI生成失败:', err);
@@ -163,4 +163,4 @@ class HomeController {
   }
 }
 
-module.exports = new HomeController(); 
+module.exports = new HomeController();
