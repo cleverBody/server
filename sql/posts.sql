@@ -102,4 +102,5 @@ INSERT INTO user_collections (user_id, type, target_id) VALUES
 (2, 'post', 1),
 (3, 'post', 2),
 (1, 'post', 5),
-(2, 'post', 4); 
+(2, 'post', 4);
+(2, 'post', 5);
