@@ -1,8 +1,23 @@
+/**
+ * 首页控制器模块
+ * 处理应用首页相关的请求，包括推荐内容、分类列表等功能
+ */
 const db = require('../models/db');
 const { success, error } = require('../utils/response');
 
+/**
+ * 首页控制器类
+ * 提供首页各功能的实现方法
+ */
 class HomeController {
-  // 获取每日推荐
+  /**
+   * 获取每日推荐情话
+   * 随机返回一条情话内容
+   * 
+   * @param {Object} req - Express请求对象
+   * @param {Object} res - Express响应对象
+   * @returns {Object} 返回随机推荐的情话内容
+   */
   async getDailyRecommend(req, res) {
     try {
       const pool = db.getPool();
@@ -28,7 +43,14 @@ class HomeController {
     }
   }
 
-  // 获取分类列表
+  /**
+   * 获取情话分类列表
+   * 返回所有分类及其包含的情话数量
+   * 
+   * @param {Object} req - Express请求对象
+   * @param {Object} res - Express响应对象
+   * @returns {Array} 返回分类列表数组
+   */
   async getCategories(req, res) {
     try {
       // 禁用缓存
@@ -37,6 +59,7 @@ class HomeController {
       res.setHeader('Expires', '0');
 
       const pool = db.getPool();
+      // 查询所有分类并统计每个分类下的情话数量
       const [rows] = await pool.execute(`
         SELECT 
           c.id,
@@ -50,7 +73,7 @@ class HomeController {
         ORDER BY count DESC
       `);
 
-      // 添加默认图片
+      // 为没有图片的分类添加默认图片
       const categories = rows.map(category => ({
         ...category,
         image: category.image || '/assets/images/category-default.jpg'
@@ -63,14 +86,23 @@ class HomeController {
     }
   }
 
-  // 获取推荐列表
+  /**
+   * 获取推荐情话列表
+   * 支持分页，返回情话列表及分页信息
+   * 
+   * @param {Object} req - Express请求对象，包含分页参数
+   * @param {Object} res - Express响应对象
+   * @returns {Object} 返回情话列表、总数和是否有更多数据
+   */
   async getRecommendations(req, res) {
     try {
       const pool = db.getPool();
+      // 解析分页参数
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 10;
       const offset = (page - 1) * limit;
 
+      // 查询情话列表，包含分类、用户、点赞和评论信息
       const [rows] = await pool.query(
         `SELECT 
           l.id,
@@ -93,12 +125,13 @@ class HomeController {
         [req.user?.id || '', offset, limit]
       );
 
+      // 获取总记录数用于分页
       const [totalResult] = await pool.query(
         'SELECT COUNT(*) as total FROM love_words WHERE status = 1'
       );
       const total = totalResult[0].total;
 
-      // 处理数据
+      // 处理数据，设置默认值和格式化时间
       const list = rows.map(item => ({
         ...item,
         avatar: item.avatar || '/assets/images/default-avatar.png',
@@ -106,6 +139,7 @@ class HomeController {
         created_at: new Date(item.created_at).toISOString()
       }));
 
+      // 返回结果，包含列表、总数和是否有更多数据
       success(res, {
         list,
         total,
@@ -117,7 +151,14 @@ class HomeController {
     }
   }
 
-  // AI生成情话
+  /**
+   * AI生成情话
+   * 根据用户提供的提示生成情话内容
+   * 
+   * @param {Object} req - Express请求对象，包含生成提示
+   * @param {Object} res - Express响应对象
+   * @returns {Object} 返回生成的情话内容
+   */
   async generateLoveWords(req, res) {
     try {
       const { prompt } = req.body;
@@ -131,12 +172,20 @@ class HomeController {
     }
   }
 
-  // 处理收藏
+  /**
+   * 处理用户收藏
+   * 将指定内容添加到用户收藏列表
+   * 
+   * @param {Object} req - Express请求对象，包含收藏目标ID和类型
+   * @param {Object} res - Express响应对象
+   * @returns {Object} 返回收藏结果
+   */
   async handleCollect(req, res) {
     try {
       const { id, type } = req.body;
       const userId = req.user.id;
 
+      // 添加收藏记录
       await db.execute(
         'INSERT INTO user_collections (user_id, type, target_id) VALUES (?, ?, ?)',
         [userId, type, id]
@@ -149,12 +198,20 @@ class HomeController {
     }
   }
 
-  // 处理点赞
+  /**
+   * 处理用户点赞
+   * 为指定内容添加点赞记录
+   * 
+   * @param {Object} req - Express请求对象，包含点赞目标ID和类型
+   * @param {Object} res - Express响应对象
+   * @returns {Object} 返回点赞结果
+   */
   async handleLike(req, res) {
     try {
       const { id, type } = req.body;
       const userId = req.user.id;
 
+      // 添加点赞记录
       await db.execute(
         'INSERT INTO user_likes (user_id, type, target_id) VALUES (?, ?, ?)',
         [userId, type, id]

@@ -1,24 +1,57 @@
+/**
+ * 首页相关路由
+ * 定义与首页功能相关的API端点
+ */
 const express = require('express');
 const router = express.Router();
-const homeController = require('../controllers/home');
-const auth = require('../middleware/auth');
+const homeController = require('../controllers/home'); // 导入首页控制器
+const auth = require('../middleware/auth'); // 导入认证中间件
 
-// 获取每日推荐
+/**
+ * @route    GET /api/home/daily
+ * @desc     获取每日推荐情话
+ * @access   Public - 无需登录，但会根据用户ID个性化结果
+ */
 router.get('/daily', homeController.getDailyRecommend);
 
-// 获取分类列表
+/**
+ * @route    GET /api/home/categories
+ * @desc     获取情话分类列表
+ * @access   Public - 所有用户可访问
+ */
 router.get('/categories', homeController.getCategories);
 
-// 获取推荐列表
+/**
+ * @route    GET /api/home/recommendations
+ * @desc     获取推荐情话列表
+ * @access   Public - 无需登录，但会根据用户ID个性化结果
+ * @query    page - 页码，默认1
+ * @query    limit - 每页数量，默认10
+ */
 router.get('/recommendations', homeController.getRecommendations);
 
-// 点赞操作
+/**
+ * @route    POST /api/home/like
+ * @desc     点赞情话
+ * @access   Private - 需要登录
+ * @body     {id, type} - 目标ID和类型
+ */
 router.post('/like', auth, homeController.handleLike);
 
-// 收藏操作
+/**
+ * @route    POST /api/home/collect
+ * @desc     收藏情话
+ * @access   Private - 需要登录
+ * @body     {id, type} - 目标ID和类型
+ */
 router.post('/collect', auth, homeController.handleCollect);
 
-// AI生成情话
+/**
+ * @route    POST /api/home/generate
+ * @desc     AI生成情话
+ * @access   Private - 需要登录
+ * @body     {prompt} - 生成提示
+ */
 router.post('/generate', auth, homeController.generateLoveWords);
 
 module.exports = router; 
